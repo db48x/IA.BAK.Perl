@@ -9,6 +9,7 @@ use File::Glob qw(:globally :nocase);
 use File::Copy;
 use Fcntl qw(:flock);
 use LWP::Simple;
+use LWP::UserAgent;
 use Archive::Extract;
 use Cwd;
 use File::Basename;
@@ -297,15 +298,20 @@ sub installgitannex{
                 rmdir "git-annex.linux";
             }
         }
-        
+
         unless(-d "git-annex.linux"){
             print "Installing a recent version of git-annex ...\n";
             unlink $annexName if (-e $annexName);
+            my $ua = LWP::UserAgent->new();
+            $ua->ssl_opts(verify_hostname => 0);
+            $ua->show_progress(1);
+
             if($NEED_PRERELEASE == 1){
-                getstore("https://downloads.kitenet.net/git-annex/autobuild/i386/git-annex-standalone-i386.tar.gz", "git-annex-standalone-i386.tar.gz");
+                $ua->get("https://downloads.kitenet.net/git-annex/autobuild/i386/git-annex-standalone-i386.tar.gz", ':content_file' => $annexName) || die "https://downloads.kitenet.net/git-annex/autobuild/i386/git-annex-standalone-i386.tar.gz\n"; 
             }else{
-                getstore("https://downloads.kitenet.net/git-annex/linux/current/git-annex-standalone-i386.tar.gz", "git-annex-standalone-i386.tar.gz");
+                $ua->get("https://downloads.kitenet.net/git-annex/linux/current/git-annex-standalone-i386.tar.gz", ':content_file' => $annexName) || die "Something went wrong while downloading https://downloads.kitenet.net/git-annex/linux/current/git-annex-standalone-i386.tar.gz\n";
             }
+            undef($ua);
             my $ae = Archive::Extract->new( archive => $annexName);
             my $ok = $ae->extract;
             unlink $annexName;
@@ -317,6 +323,7 @@ sub installgitannex{
         }
     }else{
         if(-d "git-annex.osx"){
+            die "osx install-git-annex is broken atm\n";
             unlink "git-annex.dmg";
             if($NEED_PRERELEASE == 1){
                 getstore("https://downloads.kitenet.net/git-annex/autobuild/x86_64-apple-yosemite/git-annex.dmg", "git-annex.dmg");
@@ -377,6 +384,7 @@ sub register {
     $q->param("pubkey", $pubkey);
     my $url=$q->self_url;
     $url=~s!^http://localhost!http://iabak.archiveteam.org/cgi-bin/register.cgi!;
+    print Dumper $url;
     my $result = get($url);
     # TODO: check the restult to make sure that the registration succeeded
 }
