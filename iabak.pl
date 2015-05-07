@@ -171,7 +171,7 @@ sub checkoutshard{
     chdir($localdir);
     copy "../id_rsa", ".git/annex/id_rsa";
     copy "../id_rsa.pub", ".git/annex/id_rsa.pub";
-    system("git remote add origin $repourl ; git config remove.origin.annex-ssh-options \"-i .git/annex/id_rsa\" ; git annex sync");
+    system("git remote add origin $repourl ; git config remote.origin.annex-ssh-options \"-i .git/annex/id_rsa\" ; git annex sync");
     chdir($top);
     if($prevshard){
         for(qw (annex.diskreserve annex.web-options)){
